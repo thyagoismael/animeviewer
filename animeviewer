@@ -16,7 +16,7 @@ DIR_DOWNLOADS="$DIR_CONFIG/downloads"
 # Arquivo de todos os links salvos
 ARQ_LINKS="$DIR_CONFIG/links"
 # Player de vídeo
-PLAYER=mpv
+PLAYER='mpv --really-quiet'
 
 #####################################################################
 #####################################################################
@@ -67,16 +67,17 @@ getLinks()
 # Retorna a url da página do anime
 selecionarAnime()
 {
-    # Mostra um menu com os nomes, depois busca o link relacionado
-    grep "$(cut --fields 2 < $ARQ_LINKS  | dmenu -i -l 10 -p 'Escolha o título: ')" $ARQ_LINKS | awk '{print $1}' 
+    dmenu -i -l 10 -p 'Escolha o título: ' < $ARQ_LINKS | awk '{print $1}' 
 }
 
 # Retorna a url do episódio
 selecionarEpisodio()
 {
     # $1 é o link do anime
-   removerHTML "$(curl -s $1 | grep '^<a href=".*Epis')" | # deixa apenas o link e o nome, nessa ordem
-   dmenu -i -l 10 -p 'Escolha o episódio: ' | awk '{print $1}' # deixa apenas o link
+    test -z "$1" && exit 1 # caso não seja informado o nome
+
+    removerHTML "$(curl -s $1 | grep '^<a href=".*Epis')" | # deixa apenas o link e o nome, nessa ordem
+    dmenu -i -l 10 -p 'Escolha o episódio: ' | awk '{print $1}' # deixa apenas o link
 }
 
 # Verifica se os arquivos e pastas necessárias existem
@@ -84,7 +85,7 @@ selecionarEpisodio()
 criarArquivos
 
 # Avisa se o arquivo de links estiver vazio
-test -z $(cat $ARQ_LINKS) && echo 'Aviso: Arquivo de links vazio. Favor, atualizar.'
+test -z "$(cat $ARQ_LINKS)" && echo 'Aviso: Arquivo de links vazio. Favor, atualizar.'
 
 # Menu inicial
 ESCOLHA=$(echo -e 'Reproduzir\nBaixar\nAtualizar' | dmenu -i -p 'Animeviewer')
@@ -96,7 +97,7 @@ case $ESCOLHA in
         ;;
     Baixar)
         URL_ANIME="$(selecionarAnime)"
-        DIR_ANIME=$(echo $URL_ANIME | cut -d'/' -f4) # usa a ultima parte da url como nome da pasta
+        DIR_ANIME="$(echo \"$URL_ANIME\" | cut -d'/' -f4)" # usa a ultima parte da url como nome da pasta
 
         # cria a pasta deste anime específico se não existir
         test -d "$DIR_DOWNLOADS/$DIR_ANIME" || mkdir -p "$DIR_DOWNLOADS/$DIR_ANIME" 
@@ -104,7 +105,9 @@ case $ESCOLHA in
         URL_EPISODIO="$(selecionarEpisodio "$URL_ANIME")"
         NOME_EPISODIO=$(echo $URL_EPISODIO | cut -d'/' -f 5) # ultima parte do url como nome do arquivo
 
+        test -z "$URL_EPISODIO" && exit 1 # url não informado termina a execução
         youtube-dl "$URL_EPISODIO" --exec "mv {} \"$DIR_DOWNLOADS/$DIR_ANIME/$NOME_EPISODIO\""
+        notify-send "Download terminado" "$NOME_EPISODIO está disponível." # manda notifição quando termina de baixar
         ;;
     Atualizar)
         notify-send "Animeviewer atualizado" "$(getLinks)" # atualiza e manda notifição

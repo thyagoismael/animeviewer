@@ -16,6 +16,7 @@ Modo de usar
 dependendo da sua conexão).
 * Por padrão, o reprodutor é o mpv mas pode ser alterado livremente para o vlc ou qualquer outro. 
 Apenas certifique-se de que pode reproduzir streaming para o modo *Reproduzir*.
+* Precione ESC para desistir
 
 Dependências
 ------------
