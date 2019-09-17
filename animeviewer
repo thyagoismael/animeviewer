@@ -2,14 +2,26 @@
 #
 # Autor: Thyago Ismael
 #
+# Animeviewer - utilitário para o site animesonline.vip
 
 
+#####################################################################
+#####################################################################
+## Arquivos de configuração. Altere se necessário
+#
+# Diretório base dos arquivos
 DIR_CONFIG="$HOME/.config/animeviewer"
+# Diretório dos downloads
 DIR_DOWNLOADS="$DIR_CONFIG/downloads"
+# Arquivo de todos os links salvos
 ARQ_LINKS="$DIR_CONFIG/links"
-MENU='dmenu -i -l 10'
+# Player de vídeo
 PLAYER=mpv
 
+#####################################################################
+#####################################################################
+#####################################################################
+#####################################################################
 criarArquivos()
 {
     # Cria a pasta caso não exista
@@ -22,7 +34,6 @@ criarArquivos()
     test -f "$ARQ_LINKS" || touch "$ARQ_LINKS"
 }
 
-
 removerHTML()
 {
     echo "$1" | sed 's/^.*href="// ; s/" [^"]*"/\t/ ; s/".*// ; s/ /_/g ; s/_Online//' | tr '\t' ' '
@@ -30,7 +41,7 @@ removerHTML()
 
 getLinks()
 {
-    MAIOR_PAGINA=3
+    MAIOR_PAGINA=189 # número de páginas do site (em 17-09-2019 haviam 189)
     TEMP=$(mktemp)
 
     # Faz uma string com todos os links seguindo o formato definido no site
@@ -54,19 +65,22 @@ getLinks()
 selecionarAnime()
 {
     # Mostra um menu com os nomes, depois busca o link relacionado
-    grep "$(cut --fields 2 < $ARQ_LINKS  | $MENU -p 'Escolha o título: ')" $ARQ_LINKS | awk '{print $1}' 
+    grep "$(cut --fields 2 < $ARQ_LINKS  | dmenu -i -l 10 -p 'Escolha o título: ')" $ARQ_LINKS | awk '{print $1}' 
 }
 
 selecionarEpisodio()
 {
     # $1 é o link do anime
    removerHTML "$(curl -s $1 | grep '^<a href=".*Epis')" | # deixa apenas o link e o nome, nessa ordem
-   $MENU -p 'Escolha o episódio: ' | awk '{print $1}' # deixa apenas o link
+   dmenu -i -l 10 -p 'Escolha o episódio: ' | awk '{print $1}' # deixa apenas o link
 }
 
-
+# Verifica se os arquivos e pastas necessárias existem
+# Se não existirem, os cria
 criarArquivos
-ESCOLHA=$(echo -e 'Reproduzir\nBaixar\nAtualizar' | $MENU -p 'Animeviewer')
+
+# Menu inicial
+ESCOLHA=$(echo -e 'Reproduzir\nBaixar\nAtualizar' | dmenu -i -p 'Animeviewer')
 
 case $ESCOLHA in
     Reproduzir)
@@ -76,7 +90,7 @@ case $ESCOLHA in
         ANIME="$(selecionarAnime)"
         DIR_ANIME=$(echo $ANIME | cut -d'/' -f4) # usa a ultima parte da url como nome da pasta
 
-        # cria a pasta do anime se não existir
+        # cria a pasta deste anime específico se não existir
         test -d "$DIR_DOWNLOADS/$DIR_ANIME" || mkdir -p "$DIR_DOWNLOADS/$DIR_ANIME" 
 
         URL_EPISODIO="$(selecionarEpisodio "$ANIME")"
@@ -86,4 +100,8 @@ case $ESCOLHA in
         ;;
     Atualizar)
         notify-send "Animeviewer atualizado" "$(getLinks)" # atualiza e manda notifição
+        ;;
+    *)
+        exit 1
+        ;;
 esac
