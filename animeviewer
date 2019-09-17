@@ -3,12 +3,11 @@
 # Autor: Thyago Ismael
 #
 
-# https://animesonline.vip/a-vinganca-da-ilha/ | grep 'href.*Episódio' | sed 's/^[^"]*"// ; s/" .*//'
-
 
 DIR_CONFIG=$HOME/.config/animeviewer
 ARQ_LINKS=$DIR_CONFIG/links
-
+MENU='dmenu -i -l 10'
+PLAYER=mpv
 
 criarArquivos()
 {
@@ -22,7 +21,7 @@ criarArquivos()
 
 removerHTML()
 {
-    echo "$1" | grep '^<a itemp' | sed 's/^.*href="// ; s/" [^"]*"/\t/ ; s/".*// ; s/ /_/g'
+    echo "$1" | sed 's/^.*href="// ; s/" [^"]*"/\t/ ; s/".*// ; s/ /_/g ; s/_Online//' | tr '\t' ' '
 }
 
 getLinks()
@@ -37,14 +36,27 @@ getLinks()
     done
 
     echo -n "Baixando nomes dos animes... "
-    removerHTML "$(curl -s $LINKS)" >> $TEMP
+    removerHTML "$(curl -s $LINKS | grep '^<a itemp')" >> $TEMP
 
-    echo -n "Ordenando... "
+    # Ordenando
     sort -u $TEMP > $ARQ_LINKS
     rm $TEMP
-
+    
+    # Acabou
     echo -e "Pronto!\n$(wc -l $ARQ_LINKS | cut -d' ' -f1) animes salvos"
 }
 
-criarArquivos
-getLinks
+selecionarAnime()
+{
+    # Mostra um menu com os nomes, depois busca o link relacionado
+    grep "$(cut --fields 2 < $ARQ_LINKS  | $MENU -p 'Escolha o título: ')" $ARQ_LINKS | cut -d' ' -f 1
+}
+
+selecionarEpisodio()
+{
+    # $1 é o link do anime
+   removerHTML "$(curl -s $1 | grep '^<a href=".*Epis')" |
+   $MENU -p 'Escolha o episódio: ' | awk '{print $1}' |
+   xargs -rI{} $PLAYER {}
+#curl -s https://animesonline.vip/a-familia-dracula/ | grep '^<a href=".*Epis' 
+}
