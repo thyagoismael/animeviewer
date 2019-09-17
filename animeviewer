@@ -34,11 +34,13 @@ criarArquivos()
     test -f "$ARQ_LINKS" || touch "$ARQ_LINKS"
 }
 
+# Remove a sintaxe do html deixando apenas a url e o nome
 removerHTML()
 {
     echo "$1" | sed 's/^.*href="// ; s/" [^"]*"/\t/ ; s/".*// ; s/ /_/g ; s/_Online//' | tr '\t' ' '
 }
 
+# Preenche o arquivo ARQ_LINKS
 getLinks()
 {
     MAIOR_PAGINA=189 # número de páginas do site (em 17-09-2019 haviam 189)
@@ -62,12 +64,14 @@ getLinks()
     echo -e "\n$(wc -l $ARQ_LINKS | cut -d' ' -f1) animes salvos"
 }
 
+# Retorna a url da página do anime
 selecionarAnime()
 {
     # Mostra um menu com os nomes, depois busca o link relacionado
     grep "$(cut --fields 2 < $ARQ_LINKS  | dmenu -i -l 10 -p 'Escolha o título: ')" $ARQ_LINKS | awk '{print $1}' 
 }
 
+# Retorna a url do episódio
 selecionarEpisodio()
 {
     # $1 é o link do anime
@@ -79,21 +83,25 @@ selecionarEpisodio()
 # Se não existirem, os cria
 criarArquivos
 
+# Avisa se o arquivo de links estiver vazio
+test -z $(cat $ARQ_LINKS) && echo 'Aviso: Arquivo de links vazio. Favor, atualizar.'
+
 # Menu inicial
 ESCOLHA=$(echo -e 'Reproduzir\nBaixar\nAtualizar' | dmenu -i -p 'Animeviewer')
 
+# Opção escolhida
 case $ESCOLHA in
     Reproduzir)
         selecionarEpisodio $(selecionarAnime) | xargs -rI{} $PLAYER {}
         ;;
     Baixar)
-        ANIME="$(selecionarAnime)"
-        DIR_ANIME=$(echo $ANIME | cut -d'/' -f4) # usa a ultima parte da url como nome da pasta
+        URL_ANIME="$(selecionarAnime)"
+        DIR_ANIME=$(echo $URL_ANIME | cut -d'/' -f4) # usa a ultima parte da url como nome da pasta
 
         # cria a pasta deste anime específico se não existir
         test -d "$DIR_DOWNLOADS/$DIR_ANIME" || mkdir -p "$DIR_DOWNLOADS/$DIR_ANIME" 
 
-        URL_EPISODIO="$(selecionarEpisodio "$ANIME")"
+        URL_EPISODIO="$(selecionarEpisodio "$URL_ANIME")"
         NOME_EPISODIO=$(echo $URL_EPISODIO | cut -d'/' -f 5) # ultima parte do url como nome do arquivo
 
         youtube-dl "$URL_EPISODIO" --exec "mv {} \"$DIR_DOWNLOADS/$DIR_ANIME/$NOME_EPISODIO\""
