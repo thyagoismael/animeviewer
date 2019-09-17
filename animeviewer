@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+# Autor: Thyago Ismael
+#
+
+# https://animesonline.vip/a-vinganca-da-ilha/ | grep 'href.*Episódio' | sed 's/^[^"]*"// ; s/" .*//'
+
+
+DIR_CONFIG=$HOME/.config/animeviewer
+ARQ_LINKS=$DIR_CONFIG/links
+
+
+criarArquivos()
+{
+    # Cria a pasta caso não exista
+    test -d $DIR_CONFIG || mkdir -p $DIR_CONFIG
+
+    # Cria o arquivo de links
+    test -f $ARQ_LINKS || touch $ARQ_LINKS
+}
+
+
+removerHTML()
+{
+    echo "$1" | grep '^<a itemp' | sed 's/^.*href="// ; s/" [^"]*"/\t/ ; s/".*// ; s/ /_/g'
+}
+
+getLinks()
+{
+    MAIOR_PAGINA=3
+    TEMP=$(mktemp)
+
+    LINKS="https://animesonline.vip/animes/"
+    for pagina in $(seq 2 $MAIOR_PAGINA)
+    do
+        LINKS="$LINKS https://animesonline.vip/animes/page/$pagina/"
+    done
+
+    echo -n "Baixando nomes dos animes... "
+    removerHTML "$(curl -s $LINKS)" >> $TEMP
+
+    echo -n "Ordenando... "
+    sort -u $TEMP > $ARQ_LINKS
+    rm $TEMP
+
+    echo -e "Pronto!\n$(wc -l $ARQ_LINKS | cut -d' ' -f1) animes salvos"
+}
+
+criarArquivos
+getLinks
