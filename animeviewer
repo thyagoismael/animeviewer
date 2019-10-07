@@ -58,7 +58,7 @@ criarArquivos()
 
 atualizarLinks()
 {
-    MAIOR_PAGINA=10 # número de páginas do site (em 17-09-2019 haviam 189)
+    MAIOR_PAGINA=189 # número de páginas do site (em 17-09-2019 haviam 189)
 
     getLinks $MAIOR_PAGINA
 
@@ -155,18 +155,19 @@ ativarDownloadAutomatico()
         # Se não existir, cria
         test -d "$DIRETORIO" || mkdir "$DIRETORIO"
 
-        echo $DIRETORIO
+        echo $NOME
         echo 
 
-        youtube-dl -q --skip-download $EPISODIO --exec "mv {} $DIRETORIO/$EPISODIO" \
-        2> /dev/null
-
+        youtube-dl -q $EPISODIO --exec "mv {} $DIRETORIO/" \ 2> /dev/null &
+        sed -i '1d' # remove da lista
     done < $ARQ_FILA_DOWNLOAD
 }
+
 #####################################################################
 #####################################################################
 #####################################################################
-        
+#####################################################################
+
 criarArquivos
 ativarDownloadAutomatico
 
