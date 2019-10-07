@@ -11,12 +11,16 @@
 #
 # Diretório base dos arquivos
 DIR_CONFIG="$HOME/.config/animeviewer"
+# Favoritos
+ARQ_FAVORITOS="$DIR_CONFIG/favoritos"
 # Diretório dos downloads
 DIR_DOWNLOADS="$DIR_CONFIG/downloads"
+# Lista de episodios a serem baixados
+ARQ_FILA_DOWNLOAD="$DIR_DOWNLOADS/filaDownload"
 # Arquivo de todos os links salvos
 ARQ_LINKS="$DIR_CONFIG/links"
 # Player de vídeo
-PLAYER='mpv --really-quiet'
+PLAYER='vlc'
 
 #####################################################################
 #####################################################################
@@ -25,15 +29,10 @@ PLAYER='mpv --really-quiet'
 
 menuInicial()
 {
-    OPCOES="Lista
-Favoritos
-Downloads
-Atualizar
-Sair"
-
-    echo oi
+    OPCOES="Lista\nFavoritos\nDownloads\nAtualizar\nSair"
     echo "$OPCOES" | dmenu -i
 }
+
 
 criarArquivos()
 {
@@ -45,8 +44,24 @@ criarArquivos()
 
     # Cria o arquivo de links
     test -f "$ARQ_LINKS" || touch "$ARQ_LINKS"
+
+    # Cria o arquivo de favoritos
+    test -f "$ARQ_FAVORITOS" || touch "$ARQ_FAVORITOS"
 }
 
+#####################################################################
+#####################################################################
+#####################################################################
+#####################################################################
+
+atualizarLinks()
+{
+    MAIOR_PAGINA=4 # número de páginas do site (em 17-09-2019 haviam 189)
+
+    getLinks $MAIOR_PAGINA
+
+    notify-send Acabado "$(wc -l $ARQ_LINKS | awk '{print $1}') animes salvos em $ARQ_LINKS"
+}
 # Remove a sintaxe do html deixando apenas a url e o nome
 removerHTML()
 {
@@ -56,31 +71,31 @@ removerHTML()
 # Preenche o arquivo ARQ_LINKS
 getLinks()
 {
-    MAIOR_PAGINA=189 # número de páginas do site (em 17-09-2019 haviam 189)
-    TEMP=$(mktemp)
+    TEMP=$(mktemp)  # Arquivo temporário para guardar links 
 
-    # Faz uma string com todos os links seguindo o formato definido no site
-    LINKS="https://animesonline.vip/animes/"
-    for pagina in $(seq 2 $MAIOR_PAGINA)
+    for pagina in $(seq $1)
     do
-        LINKS="$LINKS https://animesonline.vip/animes/page/$pagina/"
+        LINK="https://animesonline.vip/animes/"
+        test $pagina -eq 1 || LINK="$LINK/page/$pagina"
+
+        # Baixa o HTML, procura o nome e o link correspondente e salva num arq temporario
+        removerHTML "$(curl -s $LINK | grep '^<a itemp')" >> $TEMP
+
+        # Porcentagem de animes listados
+        PORCEN_ANIME=$(calc -p $pagina / $1)
+        echo $PORCEN_ANIME
+        export PORCEN_ANIME
     done
 
-    # Baixa todos nomes e os links de uma só vez para uma arquivo temporário
-    removerHTML "$(curl -s $LINKS | grep '^<a itemp')" >> $TEMP
-
-    # Substitui o arquivo de links anterior pelo arquivo temporário ordenado e remove-o
-    sort -u $TEMP > $ARQ_LINKS
-    rm $TEMP
-    
-    # Acabou
-    echo -e "\n$(wc -l $ARQ_LINKS | cut -d' ' -f1) animes salvos"
+    # Substitui o arquivo de links anterior pelo arquivo temporário ordenado
+    sort -u $TEMP | sed '/^$/ d' > $ARQ_LINKS
+    rm $TEMP # e remove-o
 }
 
 # Retorna a url da página do anime
 selecionarAnime()
 {
-    dmenu -i -l 10 -p 'Escolha o título: ' < $ARQ_LINKS | awk '{print $1}' 
+    dmenu -i -l 10 -p 'Escolha o título: ' < $1
 }
 
 # Retorna a url do episódio
@@ -89,8 +104,42 @@ selecionarEpisodio()
     # $1 é o link do anime
     test -z "$1" && exit 1 # caso não seja informado o nome
 
-    removerHTML "$(curl -s $1 | grep '^<a href=".*Epis')" | # deixa apenas o link e o nome, nessa ordem
-    dmenu -i -l 10 -p 'Escolha o episódio: ' | awk '{print $1}' # deixa apenas o link
+    EPISODIO=$(removerHTML "$(curl -s $1 | grep '^<a href=".*Epis')") # deixa apenas o link e o nome, nessa ordem
+
+    if test -z "$EPISODIO"
+    then
+        notify-send Erro "Não foi possível abrir o anime"
+        exit 1
+    fi
+    echo "$EPISODIO" | dmenu -i -l 10 -p 'Escolha o episódio: ' | awk '{print $1}' # deixa apenas o link
+}
+
+menuAcaoEpisodio()
+{
+    OPCOES="Reproduzir
+Baixar
+Adicionar/Remover Favorito"
+
+    ACAO=$(echo "$OPCOES" | dmenu -i)
+
+    case $ACAO in
+        "Reproduzir")
+            $PLAYER $2
+            ;;
+        "Baixar")
+            echo $EPISODIO >> $ARQ_FILA_DOWNLOAD
+            ;;
+        "Adicionar/Remover Favorito")
+            if grep $1 $ARQ_FAVORITOS
+            then
+                grep -v $1 $ARQ_FAVORITOS | tee $ARQ_FAVORITOS
+            else
+                echo $1 >> $ARQ_FAVORITOS
+            fi
+            ;;
+        *)
+            ;;
+    esac
 }
 
 #####################################################################
@@ -98,47 +147,30 @@ selecionarEpisodio()
 #####################################################################
 #####################################################################
 
-cat << ACABOUCOMANDOS
-# Verifica se os arquivos e pastas necessárias existem
-# Se não existirem, os cria
 criarArquivos
+#ativarDownloadAutomatico
 
-# Avisa se o arquivo de links estiver vazio
-test -z "$(cat $ARQ_LINKS)" && echo 'Aviso: Arquivo de links vazio. Favor, atualizar.'
-
-# Menu inicial
-ESCOLHA=$(echo 'Reproduzir\nBaixar\nAtualizar' | dmenu -i -p 'Animeviewer')
-
-# Opção escolhida
-case $ESCOLHA in
-    Reproduzir)
-        selecionarEpisodio $(selecionarAnime) | xargs -rI{} $PLAYER {}
-        ;;
-    Baixar)
-        URL_ANIME="$(selecionarAnime)"
-        DIR_ANIME="$(echo \"$URL_ANIME\" | cut -d'/' -f4)" # usa a ultima parte da url como nome da pasta
-
-        # cria a pasta deste anime específico se não existir
-        test -d "$DIR_DOWNLOADS/$DIR_ANIME" || mkdir -p "$DIR_DOWNLOADS/$DIR_ANIME" 
-
-        URL_EPISODIO="$(selecionarEpisodio "$URL_ANIME")"
-        NOME_EPISODIO=$(echo $URL_EPISODIO | cut -d'/' -f 5) # ultima parte do url como nome do arquivo
-
-        test -z "$URL_EPISODIO" && exit 1 # url não informado termina a execução
-        youtube-dl "$URL_EPISODIO" --exec "mv {} \"$DIR_DOWNLOADS/$DIR_ANIME/$NOME_EPISODIO\""
-        notify-send "Download terminado" "$NOME_EPISODIO está disponível." # manda notifição quando termina de baixar
-        ;;
-    Atualizar)
-        notify-send "Animeviewer atualizado" "$(getLinks)" # atualiza e manda notifição
-        ;;
-    *)
-        exit 1
-        ;;
-esac)
-ACABOUCOMANDOS
-
-echo ola
-while true
+for i in $(seq 1)
 do
-    mostrarMenu
+    ESCOLHA="$(menuInicial)"
+
+    case $ESCOLHA in
+        "Listão")
+            ANIME=$(selecionarAnime $ARQ_LINKS)
+            test -z "$ANIME" && continue
+            EPISODIO=$(selecionarEpisodio $(echo $ANIME | awk '{print $1}'))
+
+            menuAcaoEpisodio $ANIME $EPISODIO
+            ;;
+        "Favoritos")
+            ;;
+        "Downloads")
+            ;;
+        "Atualizar")
+            atualizarLinks
+            ;;
+        *)
+            ;;
+    esac
+    test "$ESCOLHA" = "Sair" && break
 done
