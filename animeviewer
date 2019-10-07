@@ -29,8 +29,7 @@ PLAYER='vlc'
 
 menuInicial()
 {
-    OPCOES="Lista\nFavoritos\nDownloads\nAtualizar\nSair"
-    echo "$OPCOES" | dmenu -i
+    echo "Listão\nFavoritos\nDownloads\nAtualizar\nSair" | dmenu -i -p "Animeviewer "
 }
 
 
@@ -56,7 +55,7 @@ criarArquivos()
 
 atualizarLinks()
 {
-    MAIOR_PAGINA=4 # número de páginas do site (em 17-09-2019 haviam 189)
+    MAIOR_PAGINA=10 # número de páginas do site (em 17-09-2019 haviam 189)
 
     getLinks $MAIOR_PAGINA
 
@@ -76,11 +75,12 @@ getLinks()
     for pagina in $(seq $1)
     do
         LINK="https://animesonline.vip/animes/"
-        test $pagina -eq 1 || LINK="$LINK/page/$pagina"
+        test $pagina -eq 1 || LINK="${LINK}page/$pagina/"
 
         # Baixa o HTML, procura o nome e o link correspondente e salva num arq temporario
         removerHTML "$(curl -s $LINK | grep '^<a itemp')" >> $TEMP
 
+        echo $LINK
         # Porcentagem de animes listados
         PORCEN_ANIME=$(calc -p $pagina / $1)
         echo $PORCEN_ANIME
