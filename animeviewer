@@ -22,6 +22,19 @@ PLAYER='mpv --really-quiet'
 #####################################################################
 #####################################################################
 #####################################################################
+
+menuInicial()
+{
+    OPCOES="Lista
+Favoritos
+Downloads
+Atualizar
+Sair"
+
+    echo oi
+    echo "$OPCOES" | dmenu -i
+}
+
 criarArquivos()
 {
     # Cria a pasta caso não exista
@@ -80,6 +93,12 @@ selecionarEpisodio()
     dmenu -i -l 10 -p 'Escolha o episódio: ' | awk '{print $1}' # deixa apenas o link
 }
 
+#####################################################################
+#####################################################################
+#####################################################################
+#####################################################################
+
+cat << ACABOUCOMANDOS
 # Verifica se os arquivos e pastas necessárias existem
 # Se não existirem, os cria
 criarArquivos
@@ -88,7 +107,7 @@ criarArquivos
 test -z "$(cat $ARQ_LINKS)" && echo 'Aviso: Arquivo de links vazio. Favor, atualizar.'
 
 # Menu inicial
-ESCOLHA=$(echo -e 'Reproduzir\nBaixar\nAtualizar' | dmenu -i -p 'Animeviewer')
+ESCOLHA=$(echo 'Reproduzir\nBaixar\nAtualizar' | dmenu -i -p 'Animeviewer')
 
 # Opção escolhida
 case $ESCOLHA in
@@ -115,4 +134,11 @@ case $ESCOLHA in
     *)
         exit 1
         ;;
-esac
+esac)
+ACABOUCOMANDOS
+
+echo ola
+while true
+do
+    mostrarMenu
+done
