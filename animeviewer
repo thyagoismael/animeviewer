@@ -20,7 +20,7 @@ ARQ_FILA_DOWNLOAD="$DIR_DOWNLOADS/filaDownload"
 # Arquivo de todos os links salvos
 ARQ_LINKS="$DIR_CONFIG/links"
 # Player de vídeo
-PLAYER='vlc'
+PLAYER='mpv'
 
 #####################################################################
 #####################################################################
@@ -41,11 +41,14 @@ criarArquivos()
     # Cria a pasta de downloads
     test -d "$DIR_DOWNLOADS" || mkdir -p "$DIR_DOWNLOADS"
 
-    # Cria o arquivo de links
+    # Arquivo de links
     test -f "$ARQ_LINKS" || touch "$ARQ_LINKS"
 
-    # Cria o arquivo de favoritos
+    # Arquivo de favoritos
     test -f "$ARQ_FAVORITOS" || touch "$ARQ_FAVORITOS"
+
+    # Fila de donwload
+    test -f "$ARQ_FILA_DOWNLOAD" || touch "$ARQ_FILA_DOWNLOAD"
 }
 
 #####################################################################
@@ -59,7 +62,7 @@ atualizarLinks()
 
     getLinks $MAIOR_PAGINA
 
-    notify-send Acabado "$(wc -l $ARQ_LINKS | awk '{print $1}') animes salvos em $ARQ_LINKS"
+    notify-send Atualizado "$(wc -l $ARQ_LINKS | awk '{print $1}') animes salvos em $ARQ_LINKS"
 }
 # Remove a sintaxe do html deixando apenas a url e o nome
 removerHTML()
@@ -80,10 +83,9 @@ getLinks()
         # Baixa o HTML, procura o nome e o link correspondente e salva num arq temporario
         removerHTML "$(curl -s $LINK | grep '^<a itemp')" >> $TEMP
 
-        echo $LINK
         # Porcentagem de animes listados
-        PORCEN_ANIME=$(calc -p $pagina / $1)
-        echo $PORCEN_ANIME
+        PORCEN_ANIME=$(calc -dp $pagina / $1)
+        echo "$PORCEN_ANIME"
         export PORCEN_ANIME
     done
 
@@ -124,15 +126,15 @@ Adicionar/Remover Favorito"
 
     case $ACAO in
         "Reproduzir")
-            $PLAYER $2
+            "$PLAYER" "$2"
             ;;
         "Baixar")
-            echo $EPISODIO >> $ARQ_FILA_DOWNLOAD
+            echo "$EPISODIO" >> "$ARQ_FILA_DOWNLOAD"
             ;;
         "Adicionar/Remover Favorito")
-            if grep $1 $ARQ_FAVORITOS
+            if grep "$1" "$ARQ_FAVORITOS"
             then
-                grep -v $1 $ARQ_FAVORITOS | tee $ARQ_FAVORITOS
+                grep -v "$1" "$ARQ_FAVORITOS" | tee "$ARQ_FAVORITOS"
             else
                 echo $1 >> $ARQ_FAVORITOS
             fi
@@ -142,13 +144,31 @@ Adicionar/Remover Favorito"
     esac
 }
 
-#####################################################################
-#####################################################################
-#####################################################################
-#####################################################################
+ativarDownloadAutomatico()
+{
+    while read EPISODIO
+    do
+        echo $EPISODIO
 
+        # Usa o nome do anime como diretorio
+        DIRETORIO="$DIR_DOWNLOADS"/"$(echo $EPISODIO | sed 's|.*episodio/|| ; s|-epis.*|| ')"
+        # Se não existir, cria
+        test -d "$DIRETORIO" || mkdir "$DIRETORIO"
+
+        echo $DIRETORIO
+        echo 
+
+        youtube-dl -q --skip-download $EPISODIO --exec "mv {} $DIRETORIO/$EPISODIO" \
+        2> /dev/null
+
+    done < $ARQ_FILA_DOWNLOAD
+}
+#####################################################################
+#####################################################################
+#####################################################################
+        
 criarArquivos
-#ativarDownloadAutomatico
+ativarDownloadAutomatico
 
 for i in $(seq 1)
 do
@@ -160,7 +180,7 @@ do
             test -z "$ANIME" && continue
             EPISODIO=$(selecionarEpisodio $(echo $ANIME | awk '{print $1}'))
 
-            menuAcaoEpisodio $ANIME $EPISODIO
+            menuAcaoEpisodio "$ANIME" "$EPISODIO"
             ;;
         "Favoritos")
             ;;
