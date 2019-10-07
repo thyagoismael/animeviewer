@@ -110,7 +110,7 @@ selecionarEpisodio()
 
     if test -z "$EPISODIO"
     then
-        notify-send Erro "Não foi possível abrir o anime"
+        notify-send -i error Erro "Não foi possível abrir o anime"
         exit 1
     fi
     echo "$EPISODIO" | dmenu -i -l 10 -p 'Escolha o episódio: ' | awk '{print $1}' # deixa apenas o link
@@ -118,25 +118,35 @@ selecionarEpisodio()
 
 menuAcaoEpisodio()
 {
-    OPCOES="Reproduzir
+    # Pega o nome do anime
+    ANIME=$(selecionarAnime $1) # $1 é o arquivo de links
+    test -z "$ANIME" && return 
+    # E usa pra pegar a url do episodio
+    EPISODIO="$(selecionarEpisodio $(echo $ANIME | awk '{print $1}'))"
+    test -z "$EPISODIO" && return 
+
+
+    OPCOES="Reproduz
 Baixar
 Adicionar/Remover Favorito"
 
-    ACAO=$(echo "$OPCOES" | dmenu -i)
-
+    ACAO=$(echo "$OPCOES" | dmenu -i -p 'O que fazer? ')
     case $ACAO in
         "Reproduzir")
-            "$PLAYER" "$2"
+            "$PLAYER" "$EPISODIO"
             ;;
         "Baixar")
-            echo "$EPISODIO" >> "$ARQ_FILA_DOWNLOAD"
+            notify-send -i emblem-downloads "Download iniciado"
+            baixarEpisodio $EPISODIO
             ;;
         "Adicionar/Remover Favorito")
-            if grep "$1" "$ARQ_FAVORITOS"
+            if grep "$ANIME" "$ARQ_FAVORITOS"
             then
-                grep -v "$1" "$ARQ_FAVORITOS" | tee "$ARQ_FAVORITOS"
+                notify-send -i edittrash "Removido dos favoritos"
+                grep -v "$ANIME" "$ARQ_FAVORITOS" | tee "$ARQ_FAVORITOS"
             else
-                echo $1 >> $ARQ_FAVORITOS
+                notify-send -i emblem-favorite "Adicionado aos favoritos"
+                echo $ANIME >> $ARQ_FAVORITOS
             fi
             ;;
         *)
@@ -144,23 +154,15 @@ Adicionar/Remover Favorito"
     esac
 }
 
-ativarDownloadAutomatico()
+baixarEpisodio()
 {
-    while read EPISODIO
-    do
-        echo $EPISODIO
+    # Usa o nome do anime como diretorio
+    NOME="$DIR_DOWNLOADS"/"$(echo $1 | sed 's|.*episodio/|| ; s|-epis.*|| ')"
+    # Se não existir, cria
+    test -d "$NOME" || mkdir "$NOME"
 
-        # Usa o nome do anime como diretorio
-        DIRETORIO="$DIR_DOWNLOADS"/"$(echo $EPISODIO | sed 's|.*episodio/|| ; s|-epis.*|| ')"
-        # Se não existir, cria
-        test -d "$DIRETORIO" || mkdir "$DIRETORIO"
-
-        echo $NOME
-        echo 
-
-        youtube-dl -q $EPISODIO --exec "mv {} $DIRETORIO/" \ 2> /dev/null &
-        sed -i '1d' # remove da lista
-    done < $ARQ_FILA_DOWNLOAD
+    youtube-dl -q $EPISODIO --exec "mv {} $NOME/" 2> /dev/null
+    notify-send -i emblem-default "Download terminado"
 }
 
 #####################################################################
@@ -169,7 +171,6 @@ ativarDownloadAutomatico()
 #####################################################################
 
 criarArquivos
-ativarDownloadAutomatico
 
 for i in $(seq 1)
 do
@@ -177,13 +178,10 @@ do
 
     case $ESCOLHA in
         "Listão")
-            ANIME=$(selecionarAnime $ARQ_LINKS)
-            test -z "$ANIME" && continue
-            EPISODIO=$(selecionarEpisodio $(echo $ANIME | awk '{print $1}'))
-
-            menuAcaoEpisodio "$ANIME" "$EPISODIO"
+            menuAcaoEpisodio "$ARQ_LINKS"
             ;;
         "Favoritos")
+            menuAcaoEpisodio "$ARQ_FAVORITOS"
             ;;
         "Downloads")
             ;;
