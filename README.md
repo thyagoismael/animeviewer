@@ -11,7 +11,6 @@ que permite assistir ou baixar os vídeos sem ter que abrir o navegador.
 
 Modo de usar
 ------------
-* Ao executar o programa, será mostrado um menu com as opções de *Reproduzir*, *Baixar* e *Atualizar*.
 * É necessário atualizar na primeira execução para carregar todos os títulos (pode levar alguns minutos
 dependendo da sua conexão).
 * Por padrão, o reprodutor é o mpv mas pode ser alterado livremente para o vlc ou qualquer outro. 
