@@ -6,8 +6,8 @@ Autor: Thyago Ismael (17-09-2019)
 
 Descrição
 ---------
-* Este programa é um utilitário para acessar o site animesonline.vip
-que me permite assistir ou baixar os vídeos sem ter que abrir o navegador.
+Este programa é um utilitário para o site animesonline.vip
+que permite assistir ou baixar os vídeos sem ter que abrir o navegador.
 
 Modo de usar
 ------------
@@ -20,4 +20,6 @@ Apenas certifique-se de que pode reproduzir streaming para o modo *Reproduzir*.
 
 Dependências
 ------------
-dmenu, notify-send, youtube-dl, curl, gnustep-gui-runtime
+Para instalá-las apenas digite o comando abaixo dentro deste diretório
+
+*sudo apt install $(cat dependencias)*
