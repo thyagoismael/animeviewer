@@ -20,4 +20,4 @@ Apenas certifique-se de que pode reproduzir streaming para o modo *Reproduzir*.
 
 Dependências
 ------------
-dmenu, notify-send, youtube-dl, curl
+dmenu, notify-send, youtube-dl, curl, gnustep-gui-runtime
