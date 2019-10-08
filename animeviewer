@@ -186,6 +186,9 @@ do
             menuAcaoEpisodio "$ARQ_FAVORITOS"
             ;;
         "Downloads")
+            cd $DIR_DOWNLOADS
+            $PLAYER "$(zenity --file-selection --title "Escolha um episódio")"
+            cd -
             ;;
         "Atualizar")
             atualizarLinks
