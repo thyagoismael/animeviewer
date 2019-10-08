@@ -58,7 +58,7 @@ criarArquivos()
 
 atualizarLinks()
 {
-    MAIOR_PAGINA=189 # número de páginas do site (em 17-09-2019 haviam 189)
+    MAIOR_PAGINA=5 # número de páginas do site (em 17-09-2019 haviam 189)
 
     getLinks $MAIOR_PAGINA
 
@@ -90,7 +90,7 @@ getLinks()
     done
 
     # Substitui o arquivo de links anterior pelo arquivo temporário ordenado
-    sort -u $TEMP | sed '/^$/ d' > $ARQ_LINKS
+    sort -u $TEMP | sed '/^$/ d' | awk '{t=$1; $1=$2; $2=t; print}' > $ARQ_LINKS
     rm $TEMP # e remove-o
 }
 
@@ -119,14 +119,16 @@ selecionarEpisodio()
 menuAcaoEpisodio()
 {
     # Pega o nome do anime
-    ANIME=$(selecionarAnime $1) # $1 é o arquivo de links
-    test -z "$ANIME" && return 
+    ANIME=$(selecionarAnime $1) # $1 é o arquivo de links ou de favoritos
+    test -z "$ANIME" && return
+
     # E usa pra pegar a url do episodio
-    EPISODIO="$(selecionarEpisodio $(echo $ANIME | awk '{print $1}'))"
+    EPISODIO="$(selecionarEpisodio $(echo $ANIME | awk '{print $2}'))"
     test -z "$EPISODIO" && return 
 
 
-    OPCOES="Reproduz
+    # As opções tem que ser *exatamente* iguais aos cases
+    OPCOES="Reproduzir
 Baixar
 Adicionar/Remover Favorito"
 
@@ -172,7 +174,7 @@ baixarEpisodio()
 
 criarArquivos
 
-for i in $(seq 1)
+while true
 do
     ESCOLHA="$(menuInicial)"
 
