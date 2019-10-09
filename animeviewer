@@ -58,7 +58,7 @@ criarArquivos()
 
 atualizarLinks()
 {
-    MAIOR_PAGINA=5 # número de páginas do site (em 17-09-2019 haviam 189)
+    MAIOR_PAGINA=10 # número de páginas do site (em 17-09-2019 haviam 189)
 
     getLinks $MAIOR_PAGINA
 
@@ -84,47 +84,56 @@ getLinks()
         removerHTML "$(curl -s $LINK | grep '^<a itemp')" >> $TEMP
 
         # Porcentagem de animes listados
-        PORCEN_ANIME=$(calc -dp $pagina / $1)
-        echo "$PORCEN_ANIME"
-        export PORCEN_ANIME
+        echo "$pagina de $1 páginas"
     done
 
-    # Substitui o arquivo de links anterior pelo arquivo temporário ordenado
-    sort -u $TEMP | sed '/^$/ d' | awk '{t=$1; $1=$2; $2=t; print}' > $ARQ_LINKS
-    rm $TEMP # e remove-o
+    # Ordena o arquivo temporário
+    # Inverte a coluna do link com a do nome
+    # E deixa mais bonitinho no formato de colunas
+    sort -u $TEMP | sed '/^$/ d' | awk '{t=$1; $1=$2; $2=t; print}' | column -t > $ARQ_LINKS
+
+    rm $TEMP # Por último, remove o temporário
 }
 
 # Retorna a url da página do anime
 selecionarAnime()
 {
+    # $1 é o o arquivo (lista ou favoritos)
     dmenu -i -l 10 -p 'Escolha o título: ' < $1
 }
 
 # Retorna a url do episódio
 selecionarEpisodio()
 {
-    # $1 é o link do anime
-    test -z "$1" && exit 1 # caso não seja informado o nome
+    # $1 é a url do anime
+    test -z "$1" && return # caso não seja informado o nome
 
-    EPISODIO=$(removerHTML "$(curl -s $1 | grep '^<a href=".*Epis')") # deixa apenas o link e o nome, nessa ordem
+    LISTA_EPISODIOS=$(removerHTML "$(curl -s $1 | grep '^<a href=".*Epis')") # deixa apenas o link e o nome, nessa ordem
 
-    if test -z "$EPISODIO"
+    if test -z "$LISTA_EPISODIOS"
     then
-        notify-send -i error Erro "Não foi possível abrir o anime"
-        exit 1
+        notify-send -i error Erro "Não foi possível abrir o link do anime"
+        return
     fi
-    echo "$EPISODIO" | dmenu -i -l 10 -p 'Escolha o episódio: ' | awk '{print $1}' # deixa apenas o link
+
+    echo "$LISTA_EPISODIOS" | 
+    awk '{t=$1; $1=$2; $2=t; print}' | # troca as colunas de posição
+    column -t | # deixa bonitinho
+    dmenu -i -l 10 -p 'Escolha o episódio: ' | # abre o menu
+    awk '{print $2}' # deixa apenas o link
 }
 
 menuAcaoEpisodio()
 {
-    # Pega o nome do anime
-    ANIME=$(selecionarAnime $1) # $1 é o arquivo de links ou de favoritos
-    test -z "$ANIME" && return
+    NOME_E_URL=$(selecionarAnime $1) # $1 é o arquivo de links ou de favoritos
+
+    URL_ANIME=$(echo $NOME_E_URL | awk '{print $2}')
+
+    test -z "$URL_ANIME" && return
 
     # E usa pra pegar a url do episodio
-    EPISODIO="$(selecionarEpisodio $(echo $ANIME | awk '{print $2}'))"
-    test -z "$EPISODIO" && return 
+    URL_EPISODIO="$(selecionarEpisodio $URL_ANIME)"
+    test -z "$URL_EPISODIO" && return 
 
 
     # As opções tem que ser *exatamente* iguais aos cases
@@ -132,23 +141,24 @@ menuAcaoEpisodio()
 Baixar
 Adicionar/Remover Favorito"
 
+    # Cheque duas vezes se os as opções coincidem com os cases
     ACAO=$(echo "$OPCOES" | dmenu -i -p 'O que fazer? ')
     case $ACAO in
         "Reproduzir")
-            "$PLAYER" "$EPISODIO"
+            "$PLAYER" "$URL_EPISODIO"
             ;;
         "Baixar")
-            notify-send -i emblem-downloads "Download iniciado"
-            baixarEpisodio $EPISODIO
+            notify-send -i emblem-downloads "Adicionado à fila"
+            echo $URL_EPISODIO >> $ARQ_FILA_DOWNLOAD
             ;;
         "Adicionar/Remover Favorito")
-            if grep "$ANIME" "$ARQ_FAVORITOS"
+            if grep "$NOME_E_URL" "$ARQ_FAVORITOS"
             then
                 notify-send -i edittrash "Removido dos favoritos"
-                grep -v "$ANIME" "$ARQ_FAVORITOS" | tee "$ARQ_FAVORITOS"
+                grep -v "$NOME_E_URL" "$ARQ_FAVORITOS" | tee "$ARQ_FAVORITOS"
             else
                 notify-send -i emblem-favorite "Adicionado aos favoritos"
-                echo $ANIME >> $ARQ_FAVORITOS
+                echo "$NOME_E_URL" >> $ARQ_FAVORITOS
             fi
             ;;
         *)
@@ -156,22 +166,12 @@ Adicionar/Remover Favorito"
     esac
 }
 
-baixarEpisodio()
-{
-    # Usa o nome do anime como diretorio
-    NOME="$DIR_DOWNLOADS"/"$(echo $1 | sed 's|.*episodio/|| ; s|-epis.*|| ')"
-    # Se não existir, cria
-    test -d "$NOME" || mkdir "$NOME"
-
-    youtube-dl -q $EPISODIO --exec "mv {} $NOME/" 2> /dev/null
-    notify-send -i emblem-default "Download terminado"
-}
-
 #####################################################################
 #####################################################################
 #####################################################################
 #####################################################################
 
+# Por garantia, criamos os arquivos que estão faltando
 criarArquivos
 
 while true
