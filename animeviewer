@@ -1,26 +1,8 @@
 #!/bin/sh
 #
 # Autor: Thyago Ismael
-#
 # Animeviewer - utilitário para o site animesonline.vip
-
-
-#####################################################################
-#####################################################################
-## Arquivos de configuração. Altere se necessário
 #
-# Diretório base dos arquivos
-#DIR_CONFIG="$HOME/.config/animeviewer"
-# Favoritos
-#ARQ_FAVORITOS="$DIR_CONFIG/favoritos"
-# Diretório dos downloads
-#DIR_DOWNLOADS="$DIR_CONFIG/downloads"
-# Lista de episodios a serem baixados
-#ARQ_FILA_DOWNLOAD="$DIR_DOWNLOADS/filaDownload"
-# Arquivo de todos os links salvos
-#ARQ_LINKS="$DIR_CONFIG/links"
-# Player de vídeo
-#PLAYER='mpv'
 
 
 #####################################################################
@@ -31,23 +13,25 @@
 # Passos iniciais do programa
 #
 # Arquivo de variáveis
+
 ARQ_CONFIGURACAO=$HOME/.animerc
 ARQ_CONFIGURACAO_BACKUP=$HOME/.config/animeviewer/.animerc.skel
 
 if test -f $ARQ_CONFIGURACAO
 then
     . $ARQ_CONFIGURACAO
-else if test -f $ARQ_CONFIGURACAO_BACKUP
+elif test -f $ARQ_CONFIGURACAO_BACKUP
+then
     . $ARQ_CONFIGURACAO_BACKUP
 else
-    echo "Não foi possível encontrar o arquivo $ARQ_CONFIGURACAO"
+    echo "Não foi possível encontrar o arquivo $ARQ_CONFIGURACAO" > /dev/stderr
 fi
 
 # Cria os arquivos que estão faltando, se houver
 
 test -d "$DIR_CONFIG"       || mkdir -p "$DIR_CONFIG"
 test -d "$DIR_DOWNLOADS"    || mkdir -p "$DIR_DOWNLOADS"
-test -f "$ARQ_LINKS"        || touch "$ARQ_LINKS"
+test -f "$ARQ_LISTAO"        || touch "$ARQ_LISTAO"
 test -f "$ARQ_FAVORITOS"    || touch "$ARQ_FAVORITOS"
 test -f "$ARQ_FILA_DOWNLOAD"|| touch "$ARQ_FILA_DOWNLOAD"
 
@@ -125,7 +109,8 @@ selecionarEpisodio()
 
 menuAcaoEpisodio()
 {
-    NOME_E_URL=$(selecionarAnime $1) # $1 é o arquivo de links ou de favoritos
+    # $1 é o arquivo de links ou de favoritos
+    NOME_E_URL=$(selecionarAnime "$1") 
 
     URL_ANIME=$(echo $NOME_E_URL | awk '{print $2}')
 
@@ -152,11 +137,15 @@ Adicionar/Remover Favorito"
             echo $URL_EPISODIO >> $ARQ_FILA_DOWNLOAD
             ;;
         "Adicionar/Remover Favorito")
+            # Se esta na lista
             if grep "$NOME_E_URL" "$ARQ_FAVORITOS"
             then
+                # remove
                 notify-send -i edittrash "Removido dos favoritos"
                 grep -v "$NOME_E_URL" "$ARQ_FAVORITOS" | tee "$ARQ_FAVORITOS"
-            else
+            # senão
+            else 
+                # adiciona
                 notify-send -i emblem-favorite "Adicionado aos favoritos"
                 echo "$NOME_E_URL" >> $ARQ_FAVORITOS
             fi
@@ -176,16 +165,13 @@ menuInicial()
 #####################################################################
 #####################################################################
 
-# Por garantia, criamos os arquivos que estão faltando
-criarArquivos
-
 while true
 do
     ESCOLHA="$(menuInicial)"
 
     case $ESCOLHA in
         "Listão")
-            menuAcaoEpisodio "$ARQ_LINKS"
+            menuAcaoEpisodio "$ARQ_LISTAO"
             ;;
         "Favoritos")
             menuAcaoEpisodio "$ARQ_FAVORITOS"

@@ -31,8 +31,8 @@ ARQ_FAVORITOS=$DIR_CONFIG/favoritos
 DIR_DOWNLOADS=$DIR_CONFIG/downloads
 
 # Lista de episodios a serem baixados
-#ARQ_FILA_DOWNLOAD=$DIR_DOWNLOADS/filaDownload # padrão
-ARQ_FILA_DOWNLOAD=$DIR_DOWNLOADS/filaDownload
+#ARQ_FILA_DOWNLOAD=$DIR_DOWNLOADS/filaDeDownloads # padrão
+ARQ_FILA_DOWNLOAD=$DIR_DOWNLOADS/filaDeDownloads
 
 # Arquivo de todos os links salvos
 #ARQ_LISTAO=$DIR_CONFIG/listaDeAnimes # padrão
