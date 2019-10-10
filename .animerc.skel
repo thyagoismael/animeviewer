@@ -5,7 +5,6 @@
 # devidamente especificados. A ausência de pelo menos um deles
 # levará a um mal funcionamento.
 #
-#
 # Os parâmetros devem ser especificados com seu nome, um sinal
 # de igualdade (=) e o valor, *SEM ESPAÇOS ENTRE ELES*.
 #

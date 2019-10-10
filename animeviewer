@@ -27,6 +27,7 @@ else
     echo "Não foi possível encontrar o arquivo $ARQ_CONFIGURACAO" > /dev/stderr
 fi
 
+
 # Cria os arquivos que estão faltando, se houver
 
 test -d "$DIR_CONFIG"       || mkdir -p "$DIR_CONFIG"
