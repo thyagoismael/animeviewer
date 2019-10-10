@@ -1,0 +1,44 @@
+# Arquivo de configuração do Animeviewer
+# Personalize suas pastas e diretórios
+#
+# Atenção este programa precisa que todas os parâmetros estejam
+# devidamente especificados. A ausência de pelo menos um deles
+# levará a um mal funcionamento.
+#
+#
+# Os parâmetros devem ser especificados com seu nome, um sinal
+# de igualdade (=) e o valor, *SEM ESPAÇOS ENTRE ELES*.
+#
+# DIR_CONFIG            Diretório base de todos os arquivos
+# ARQ_FAVORITOS         Lista de links para seus favoritos
+# DIR_DOWNLOADS         Onde seus episódios serão baixados
+# ARQ_FILA_DOWNLOAD     Links dos episódios para baixar
+# ARQ_LISTAO            Lista com todos os animes
+# PLAYER                Software reprodutor de vídeos e streaming
+#
+
+
+# Diretório base dos arquivos
+#DIR_CONFIG=$HOME/.config/animeviewer # padrão
+DIR_CONFIG=$HOME/.config/animeviewer
+
+# Lista de favoritos
+#ARQ_FAVORITOS=$DIR_CONFIG/favoritos # padrão
+ARQ_FAVORITOS=$DIR_CONFIG/favoritos
+
+# Diretório dos downloads
+#DIR_DOWNLOADS=$DIR_CONFIG/downloads # padrão
+DIR_DOWNLOADS=$DIR_CONFIG/downloads
+
+# Lista de episodios a serem baixados
+#ARQ_FILA_DOWNLOAD=$DIR_DOWNLOADS/filaDownload # padrão
+ARQ_FILA_DOWNLOAD=$DIR_DOWNLOADS/filaDownload
+
+# Arquivo de todos os links salvos
+#ARQ_LISTAO=$DIR_CONFIG/listaDeAnimes # padrão
+ARQ_LISTAO=$DIR_CONFIG/listaDeAnimes
+
+# Player de vídeo
+# Certifique-se de que suporta streaming
+#PLAYER=mpv #padrão
+PLAYER=mpv

@@ -10,46 +10,46 @@
 ## Arquivos de configuração. Altere se necessário
 #
 # Diretório base dos arquivos
-DIR_CONFIG="$HOME/.config/animeviewer"
+#DIR_CONFIG="$HOME/.config/animeviewer"
 # Favoritos
-ARQ_FAVORITOS="$DIR_CONFIG/favoritos"
+#ARQ_FAVORITOS="$DIR_CONFIG/favoritos"
 # Diretório dos downloads
-DIR_DOWNLOADS="$DIR_CONFIG/downloads"
+#DIR_DOWNLOADS="$DIR_CONFIG/downloads"
 # Lista de episodios a serem baixados
-ARQ_FILA_DOWNLOAD="$DIR_DOWNLOADS/filaDownload"
+#ARQ_FILA_DOWNLOAD="$DIR_DOWNLOADS/filaDownload"
 # Arquivo de todos os links salvos
-ARQ_LINKS="$DIR_CONFIG/links"
+#ARQ_LINKS="$DIR_CONFIG/links"
 # Player de vídeo
-PLAYER='mpv'
+#PLAYER='mpv'
+
 
 #####################################################################
 #####################################################################
 #####################################################################
 #####################################################################
+#
+# Passos iniciais do programa
+#
+# Arquivo de variáveis
+ARQ_CONFIGURACAO=$HOME/.animerc
+ARQ_CONFIGURACAO_BACKUP=$HOME/.config/animeviewer/.animerc.skel
 
-menuInicial()
-{
-    echo "Listão\nFavoritos\nDownloads\nAtualizar\nSair" | dmenu -i -p "Animeviewer "
-}
+if test -f $ARQ_CONFIGURACAO
+then
+    . $ARQ_CONFIGURACAO
+else if test -f $ARQ_CONFIGURACAO_BACKUP
+    . $ARQ_CONFIGURACAO_BACKUP
+else
+    echo "Não foi possível encontrar o arquivo $ARQ_CONFIGURACAO"
+fi
 
+# Cria os arquivos que estão faltando, se houver
 
-criarArquivos()
-{
-    # Cria a pasta caso não exista
-    test -d "$DIR_CONFIG" || mkdir -p "$DIR_CONFIG"
-
-    # Cria a pasta de downloads
-    test -d "$DIR_DOWNLOADS" || mkdir -p "$DIR_DOWNLOADS"
-
-    # Arquivo de links
-    test -f "$ARQ_LINKS" || touch "$ARQ_LINKS"
-
-    # Arquivo de favoritos
-    test -f "$ARQ_FAVORITOS" || touch "$ARQ_FAVORITOS"
-
-    # Fila de donwload
-    test -f "$ARQ_FILA_DOWNLOAD" || touch "$ARQ_FILA_DOWNLOAD"
-}
+test -d "$DIR_CONFIG"       || mkdir -p "$DIR_CONFIG"
+test -d "$DIR_DOWNLOADS"    || mkdir -p "$DIR_DOWNLOADS"
+test -f "$ARQ_LINKS"        || touch "$ARQ_LINKS"
+test -f "$ARQ_FAVORITOS"    || touch "$ARQ_FAVORITOS"
+test -f "$ARQ_FILA_DOWNLOAD"|| touch "$ARQ_FILA_DOWNLOAD"
 
 #####################################################################
 #####################################################################
@@ -164,6 +164,11 @@ Adicionar/Remover Favorito"
         *)
             ;;
     esac
+}
+
+menuInicial()
+{
+    echo "Listão\nFavoritos\nDownloads\nAtualizar\nSair" | dmenu -i -p "Animeviewer "
 }
 
 #####################################################################
