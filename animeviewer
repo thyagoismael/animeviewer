@@ -48,7 +48,11 @@ test -f "$ARQ_FILA_DOWNLOAD"|| touch "$ARQ_FILA_DOWNLOAD"
 # Remove a sintaxe do html deixando apenas a url e o nome
 removerHTML()
 {
-    echo "$1" | # Meu shell reclamou do here string
+    # $1 é a stream
+    # $2 é a tag de busca
+
+    echo "$1" |
+    grep "$2" |
     sed 's/^.*href="// ; s/" [^"]*"/\t/ ; s/".*// ; s/ /_/g ; s/_Online//' | # Retira as tags do html
     tr '\t' ' ' | # troca tab por espaço
     awk '{t=$1; $1=$2; $2=t; print}' # troca as colunas de posição
@@ -67,6 +71,7 @@ atualizarLinks()
 {
     TEMP=$(mktemp)  # Arquivo temporário para guardar links 
 
+    pagina=190
     while true
     do
         LINK="https://animesonline.vip/animes/"
@@ -75,13 +80,15 @@ atualizarLinks()
         HTML="$(curl -s $LINK)"
 
         # Caso não haja mais páginas a buscar
-        paginaVazia "$HTML" && break
+        paginaVazia "$HTML" > /dev/null && break
         
+        echo $HTML | grep '^<a itemp'
         # Baixa o HTML, procura o nome e o link correspondente e salva num arq temporario
-        removerHTML "$(echo $HTML | grep '^<a itemp')" >> $TEMP
+        removerHTML "$HTML" '^<a itemp' >> $TEMP
 
         # Quantidade de animes listados
         echo "$pagina páginas"
+        pagina=$(( pagina + 1 ))
     done
 
     # Ordena o arquivo temporário
