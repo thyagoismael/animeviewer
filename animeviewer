@@ -45,43 +45,53 @@ test -f "$ARQ_FILA_DOWNLOAD"|| touch "$ARQ_FILA_DOWNLOAD"
 #####################################################################
 #####################################################################
 
-atualizarLinks()
-{
-    MAIOR_PAGINA=10 # número de páginas do site (em 17-09-2019 haviam 189)
-
-    getLinks $MAIOR_PAGINA
-
-    notify-send Atualizado "$(wc -l $ARQ_LINKS | awk '{print $1}') animes salvos em $ARQ_LINKS"
-}
 # Remove a sintaxe do html deixando apenas a url e o nome
 removerHTML()
 {
-    echo "$1" | sed 's/^.*href="// ; s/" [^"]*"/\t/ ; s/".*// ; s/ /_/g ; s/_Online//' | tr '\t' ' '
+    echo "$1" | # Meu shell reclamou do here string
+    sed 's/^.*href="// ; s/" [^"]*"/\t/ ; s/".*// ; s/ /_/g ; s/_Online//' | # Retira as tags do html
+    tr '\t' ' ' | # troca tab por espaço
+    awk '{t=$1; $1=$2; $2=t; print}' # troca as colunas de posição
 }
 
-# Preenche o arquivo ARQ_LINKS
-getLinks()
+# Verifica se existe algum link para ser extraído da página
+# Na verdade, procura pela mensagem de "Nenhum resultado encontrado"
+paginaVazia()
+{
+    # $1 é o HTML da página
+    echo "$1" | grep -ic 'nenhum'
+}
+
+# Preenche o arquivo ARQ_LISTAO
+atualizarLinks()
 {
     TEMP=$(mktemp)  # Arquivo temporário para guardar links 
 
-    for pagina in $(seq $1)
+    while true
     do
         LINK="https://animesonline.vip/animes/"
         test $pagina -eq 1 || LINK="${LINK}page/$pagina/"
 
-        # Baixa o HTML, procura o nome e o link correspondente e salva num arq temporario
-        removerHTML "$(curl -s $LINK | grep '^<a itemp')" >> $TEMP
+        HTML="$(curl -s $LINK)"
 
-        # Porcentagem de animes listados
-        echo "$pagina de $1 páginas"
+        # Caso não haja mais páginas a buscar
+        paginaVazia "$HTML" && break
+        
+        # Baixa o HTML, procura o nome e o link correspondente e salva num arq temporario
+        removerHTML "$(echo $HTML | grep '^<a itemp')" >> $TEMP
+
+        # Quantidade de animes listados
+        echo "$pagina páginas"
     done
 
     # Ordena o arquivo temporário
-    # Inverte a coluna do link com a do nome
     # E deixa mais bonitinho no formato de colunas
-    sort -u $TEMP | sed '/^$/ d' | awk '{t=$1; $1=$2; $2=t; print}' | column -t > $ARQ_LINKS
+    sort -u $TEMP | sed '/^ *$/ d' | column -t > $ARQ_LISTAO
 
-    rm $TEMP # Por último, remove o temporário
+    rm $TEMP # Remove o temporário
+
+    # Notificação com o tamanho do listão
+    notify-send Atualizado "$(wc -l $ARQ_LISTAO | awk '{print $1}') animes salvos em $ARQ_LISTAO"
 }
 
 # Retorna a url da página do anime
@@ -106,7 +116,6 @@ selecionarEpisodio()
     fi
 
     echo "$LISTA_EPISODIOS" | 
-    awk '{t=$1; $1=$2; $2=t; print}' | # troca as colunas de posição
     column -t | # deixa bonitinho
     dmenu -i -l 10 -p 'Escolha o episódio: ' | # abre o menu
     awk '{print $2}' # deixa apenas o link
