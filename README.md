@@ -6,19 +6,16 @@ Autor: Thyago Ismael (17-09-2019)
 
 Descrição
 ---------
-Este programa é um utilitário para o site animesonline.vip
-que permite assistir ou baixar os vídeos sem ter que abrir o navegador.
+O mais simples gerenciador de Animes existente. Assista, baixe e marque seus animes favoritos 
+sem ter que dar dúzias de cliques e fechar dezenas de anúncios.
 
 Modo de usar
 ------------
+* Para personalizar as pastas e arquivos, edite o arquivo ~/.animerc
 * É necessário atualizar na primeira execução para carregar todos os títulos (pode levar alguns minutos
 dependendo da sua conexão).
-* Por padrão, o reprodutor é o mpv mas pode ser alterado livremente para o vlc ou qualquer outro. 
-Apenas certifique-se de que pode reproduzir streaming para o modo *Reproduzir*.
 * Precione ESC para desistir
 
-Dependências
+Instalação
 ------------
-Para instalá-las apenas digite o comando abaixo dentro deste diretório
-
-*sudo apt install $(cat dependencias)*
+Basta clicar no *install* ou digitar *./install* na linha de comando.

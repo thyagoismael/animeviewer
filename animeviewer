@@ -193,6 +193,21 @@ menuInicial()
 #####################################################################
 #####################################################################
 
+# Opções de linha de comando
+while test "$1"
+do
+    case "$1" in
+        "-a")
+            atualizarLinks
+            exit 0
+            ;;
+        *)
+            ;;
+    esac
+    shift
+
+done
+
 while true
 do
     ESCOLHA="$(menuInicial)"
