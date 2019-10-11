@@ -71,13 +71,18 @@ atualizarLinks()
 {
     TEMP=$(mktemp)  # Arquivo temporário para guardar links 
 
-    pagina=190
+    pagina=1
     while true
     do
         LINK="https://animesonline.vip/animes/"
         test $pagina -eq 1 || LINK="${LINK}page/$pagina/"
 
         HTML="$(curl -s $LINK)"
+        if test -z "$HTML"
+        then
+            notify-send -i error "Erro de atualização" "Não foi possível acessar o site"
+            exit 1
+        fi
 
         # Caso não haja mais páginas a buscar
         paginaVazia "$HTML" > /dev/null && break
@@ -114,7 +119,8 @@ selecionarEpisodio()
     # $1 é a url do anime
     test -z "$1" && return # caso não seja informado o nome
 
-    LISTA_EPISODIOS=$(removerHTML "$(curl -s $1 | grep '^<a href=".*Epis')") # deixa apenas o link e o nome, nessa ordem
+    # deixa apenas o link e o nome, nessa ordem
+    LISTA_EPISODIOS=$(removerHTML "$(curl -s $1)" '^<a href=.*Epis') 
 
     if test -z "$LISTA_EPISODIOS"
     then
