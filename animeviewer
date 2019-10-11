@@ -17,6 +17,9 @@
 ARQ_CONFIGURACAO=$HOME/.animerc
 ARQ_CONFIGURACAO_BACKUP=$HOME/.config/animeviewer/.animerc.skel
 
+# Se não houver um arquivo de configuração na home,
+# use o que backup. Se nenhum dos dois puder ser encontrado
+# o programa termina com erro
 if test -f $ARQ_CONFIGURACAO
 then
     . $ARQ_CONFIGURACAO
@@ -24,7 +27,8 @@ elif test -f $ARQ_CONFIGURACAO_BACKUP
 then
     . $ARQ_CONFIGURACAO_BACKUP
 else
-    echo "Não foi possível encontrar o arquivo $ARQ_CONFIGURACAO" > /dev/stderr
+    notify-send -i error "Erro na abertura" "Não foi possível encontrar o arquivo $ARQ_CONFIGURACAO" > /dev/stderr
+    exit 1
 fi
 
 
@@ -32,7 +36,7 @@ fi
 
 test -d "$DIR_CONFIG"       || mkdir -p "$DIR_CONFIG"
 test -d "$DIR_DOWNLOADS"    || mkdir -p "$DIR_DOWNLOADS"
-test -f "$ARQ_LISTAO"        || touch "$ARQ_LISTAO"
+test -f "$ARQ_LISTAO"       || touch "$ARQ_LISTAO"
 test -f "$ARQ_FAVORITOS"    || touch "$ARQ_FAVORITOS"
 test -f "$ARQ_FILA_DOWNLOAD"|| touch "$ARQ_FILA_DOWNLOAD"
 
@@ -123,12 +127,13 @@ menuAcaoEpisodio()
 
 
     # As opções tem que ser *exatamente* iguais aos cases
+    #OPCOES="Reproduzir\nBaixar\nAdicionar/Remover Favorito"
     OPCOES="Reproduzir
 Baixar
 Adicionar/Remover Favorito"
 
     # Cheque duas vezes se os as opções coincidem com os cases
-    ACAO=$(echo "$OPCOES" | dmenu -i -p 'O que fazer? ')
+    ACAO=$(printf "$OPCOES" | dmenu -i -p 'O que fazer? ')
     case $ACAO in
         "Reproduzir")
             "$PLAYER" "$URL_EPISODIO"
@@ -158,7 +163,7 @@ Adicionar/Remover Favorito"
 
 menuInicial()
 {
-    echo "Listão\nFavoritos\nDownloads\nAtualizar\nSair" | dmenu -i -p "Animeviewer "
+    printf "Listão\nFavoritos\nDownloads\nAtualizar\nSair" | dmenu -i -p "Animeviewer "
 }
 
 #####################################################################

@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# Execute este arquivo para instalar o programa
+#
+
+EXECUTAVEL="animeviewer"
+CONFIG_HOME=".animerc"
+CONFIG_SKEL=".animerc.skel"
+DEPENDENCIAS="dependencias"
+
+SUCESSO=0
+
+# Movendo executável
+if echo $PATH | grep "$HOME/.local/bin" > /dev/null 
+then
+    sudo cp $EXECUTAVEL $HOME/.local/bin
+    echo "$EXECUTAVEL copiado para $HOME/.local/bin"
+else
+    sudo cp $EXECUTAVEL /usr/bin/
+    echo "$EXECUTAVEL copiado para /usr/bin"
+fi
+
+. ./$CONFIG_SKEL
+# Cria uma cópia do arquivo de configuração para o
+# diretório de configuração (backup) e para a $HOME
+test -d "$DIR_CONFIG" || sudo mkdir -p "$DIR_CONFIG" && echo "Diretório $DIR_CONFIG criado" > /dev/stderr
+sudo cp $CONFIG_SKEL $DIR_CONFIG
+sudo cp $CONFIG_SKEL $HOME/$CONFIG
+
+# Instalando dependências
+dep=$(cat $DEPENDENCIAS)
+printf "\nInstalando dependências:"
+echo $dep
+sudo apt install $dep

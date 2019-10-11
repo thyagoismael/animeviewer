@@ -1,7 +1,5 @@
-dmenu
+suckless-tools
 youtube-dl
 curl
 gnustep-gui-runtime
 zenity
-calc
-column
